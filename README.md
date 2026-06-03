@@ -1,82 +1,65 @@
 # Financial Transactions Analytics Dashboard
 
-## Project Summary
+## Short Project Summary
 
-This is a complete Data Analyst portfolio project that analyses 9,000 synthetic financial transactions across income, expenses, transfers, refunds, recurring payments and unusual activity. The project uses Python for data generation and cleaning, SQL for analysis queries, Jupyter Notebook for exploratory analysis and a Power BI plan for dashboard development.
+This Data Analyst portfolio project analyses 9,000 synthetic financial transactions across income, expenses, transfers, refunds, recurring payments and unusual activity. It demonstrates a complete analysis workflow using Python and pandas for data cleaning, PostgreSQL-compatible SQL for querying, Jupyter Notebook for exploratory analysis and Power BI planning for dashboard reporting.
 
-The project is designed to be clear, realistic and easy to explain in interviews for Data Analyst Apprentice, Junior Data Analyst, Finance Data Analyst, Reporting Analyst, Business Intelligence Analyst and Data Technician roles.
+Repository:
+
+```text
+https://github.com/sjkali22/financial-transactions-analytics-dashboard
+```
+
+The project is designed to be clear, realistic and easy to explain in interviews for junior data analyst, reporting analyst, BI analyst and finance data analyst roles.
 
 ## Business Problem
 
-Finance teams need reliable reporting to understand cash flow, category spend, recurring costs, unusual transactions and budget performance. Raw transaction data is often too detailed for decision-making, so it must be cleaned, transformed and summarised into KPIs, SQL outputs and dashboards.
+Finance and reporting teams need reliable transaction reporting to understand cash flow, spending patterns, recurring costs, budget performance and transactions that may require review. Raw transaction data is too detailed for decision-making on its own, so it needs to be cleaned, transformed and summarised into meaningful KPIs, analysis outputs and dashboard views.
 
-This project answers a practical reporting question:
+This project answers the question:
 
-> How can transaction data be transformed into business-ready insight for financial monitoring and decision-making?
+> How can financial transaction data be transformed into business-ready insight for reporting, monitoring and decision-making?
 
 ## Project Objectives
 
 - Generate a realistic synthetic financial transactions dataset.
 - Clean and prepare transaction data using Python and pandas.
-- Create analysis-ready fields for cash flow, monthly trends, budget status and anomaly review.
-- Analyse the data with PostgreSQL-compatible SQL queries.
+- Create analysis-ready fields for monthly trends, net cash flow, budget variance and anomaly review.
+- Use SQL to answer common financial reporting questions.
 - Build a Jupyter Notebook for exploratory analysis and simple visualisation.
-- Prepare a Power BI dashboard plan with recommended visuals and DAX measures.
-- Write a business-style insights report with recommendations.
+- Prepare a Power BI dashboard plan with recommended visuals, slicers and DAX measures.
+- Write a professional insights report with business recommendations.
 
-## Tools Used
+## Tools and Skills Used
 
 - Python
 - pandas
 - numpy
 - matplotlib
 - Jupyter Notebook
-- PostgreSQL SQL
-- Power BI
-- VS Code
-- Git and GitHub
+- PostgreSQL-compatible SQL
+- Power BI dashboard planning
+- DAX measure design
+- Financial reporting
+- KPI reporting
+- Anomaly detection
+- Business recommendations
+- Git and GitHub documentation
 
-## Dataset Description
+## Dataset Overview
 
-The dataset is synthetic and saved in two versions:
+The dataset is synthetic and included in the repository for portfolio review.
 
 - Raw dataset: `data/raw/transactions_raw.csv`
 - Cleaned dataset: `data/cleaned/transactions_cleaned.csv`
+- Rows in cleaned dataset: 9,000
+- Customers: 120
+- Accounts: 149
+- Date range: `2025-01-01` to `2025-12-31`
 
-The cleaned dataset contains 9,000 transactions across 120 customers and 149 accounts from 2025-01-01 to 2025-12-31.
+The cleaned dataset includes original transaction fields and derived reporting fields such as `transaction_month`, `income_amount`, `expense_amount`, `net_amount`, `amount_abs`, `category_budget`, `budget_variance` and `budget_status`.
 
-Main fields include:
-
-- `transaction_id`
-- `transaction_date`
-- `account_id`
-- `customer_id`
-- `transaction_type`
-- `category`
-- `merchant`
-- `amount`
-- `payment_method`
-- `location`
-- `is_recurring`
-- `is_unusual`
-- `balance_after_transaction`
-
-Derived analysis fields include:
-
-- `transaction_month`
-- `transaction_year`
-- `month_name`
-- `income_amount`
-- `expense_amount`
-- `net_amount`
-- `amount_abs`
-- `category_budget`
-- `category_month_expense`
-- `budget_variance`
-- `budget_variance_pct`
-- `budget_status`
-
-## Folder Structure
+## Repository Structure
 
 ```text
 financial-transactions-analytics-dashboard/
@@ -86,6 +69,8 @@ financial-transactions-analytics-dashboard/
 │   │   └── transactions_raw.csv
 │   └── cleaned/
 │       └── transactions_cleaned.csv
+├── docs/
+│   └── data_dictionary.md
 ├── sql/
 │   └── transaction_analysis_queries.sql
 ├── notebooks/
@@ -105,12 +90,12 @@ financial-transactions-analytics-dashboard/
 
 ## Key Analysis Questions
 
-- What are the total income, total expenses and net cash flow?
+- What are total income, total expenses and net cash flow?
 - How do income and expenses change month by month?
-- Which spending categories and merchants drive the most cost?
+- Which categories and merchants drive the highest spend?
 - Which transactions are recurring?
-- Which transactions look unusual or require review?
-- Which categories are over budget?
+- Which transactions are unusual or worth reviewing?
+- Which categories are over budget or near budget?
 - Which payment methods are used most often?
 - Which customers or accounts have the highest expenses?
 
@@ -118,7 +103,7 @@ financial-transactions-analytics-dashboard/
 
 | Metric | Value |
 | --- | ---: |
-| Transactions | 9,000 |
+| Transactions analysed | 9,000 |
 | Customers | 120 |
 | Accounts | 149 |
 | Total income | 4.71M |
@@ -132,86 +117,57 @@ financial-transactions-analytics-dashboard/
 
 ## Dashboard Overview
 
-The Power BI dashboard is planned as four report pages:
+The Power BI dashboard is planned as a four-page reporting pack titled **Financial Transactions Analytics Dashboard**.
 
-1. **Executive Overview**
-   - Total Income KPI
-   - Total Expenses KPI
-   - Net Cash Flow KPI
-   - Transaction Count KPI
-   - Monthly income vs expenses visual
-   - Category and payment method breakdowns
+> Dashboard screenshots will be added after the Power BI report has been built.
 
-2. **Spending Analysis**
-   - Spending by category
-   - Top merchants
-   - Monthly spending trend
-   - High-spend categories
-   - Slicers for date, category, customer, transaction type and payment method
+Planned pages:
 
-3. **Recurring and Unusual Transactions**
-   - Recurring payments table
-   - Unusual transactions table
-   - Unusual transaction KPIs
-   - Spend spike analysis
-   - Large transaction visual
+1. Executive Overview
+2. Spending Analysis
+3. Recurring and Unusual Transactions
+4. Budget Performance
 
-4. **Budget Performance**
-   - Budget vs actual by category
-   - Over-budget categories
-   - Budget status breakdown
-   - Recommendations section
+The dashboard is designed to show executive KPIs, monthly cash flow, category spend, merchant spend, recurring payments, unusual transactions and budget performance. Full dashboard build guidance is available in `dashboard/powerbi_dashboard_plan.md`.
 
-Full build instructions are in `dashboard/powerbi_dashboard_plan.md`.
+## Dashboard Screenshots
+
+Screenshots will be added after the Power BI dashboard is built.
+
+Expected screenshot files:
+
+```text
+dashboard/screenshots/executive_overview.png
+dashboard/screenshots/spending_analysis.png
+dashboard/screenshots/recurring_unusual_transactions.png
+dashboard/screenshots/budget_performance.png
+```
+
+No broken image links are included yet because the screenshots have not been exported.
 
 ## Example Insights
 
-- Rent was the largest expense category at 1.35M, making fixed housing costs the biggest cost driver.
+- Rent was the largest expense category at 1.35M, making fixed housing costs the main cost driver.
 - Utilities were the second largest expense group at 208,573.33, driven by PowerGrid, WaterWorks and MobileConnect.
-- Shopping and travel were the most frequent over-budget categories, suggesting they should be monitored closely.
+- Shopping and travel had the most frequent over-budget months, making them strong candidates for monitoring.
 - 129 unusual transactions were flagged, with a combined value of 113,484.26.
-- 31 duplicate-looking transaction groups were found using account, date, merchant, category and amount matching.
+- 31 duplicate-looking transaction groups were identified using account, date, merchant, category and amount matching.
 - Net cash flow stayed positive in every month of 2025.
 
 More detail is available in `reports/insights.md`.
 
 ## How to Run the Project Locally
 
-From VS Code, open a terminal in the project folder and run:
+Clone the existing GitHub repository and run the project locally:
 
 ```bash
+git clone https://github.com/sjkali22/financial-transactions-analytics-dashboard.git
+cd financial-transactions-analytics-dashboard
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-```
-
-## Generate the Dataset
-
-```bash
 python scripts/generate_transactions.py
-```
-
-This creates:
-
-```text
-data/raw/transactions_raw.csv
-```
-
-## Clean the Dataset
-
-```bash
 python scripts/clean_transactions.py
-```
-
-This creates:
-
-```text
-data/cleaned/transactions_cleaned.csv
-```
-
-## Run the Notebook
-
-```bash
 jupyter notebook
 ```
 
@@ -221,9 +177,9 @@ Then open:
 notebooks/transaction_analysis.ipynb
 ```
 
-The notebook loads the cleaned CSV and includes data quality checks, summary statistics, monthly cash flow analysis, category spend, merchant spend, recurring payments, unusual transactions, payment method analysis and budget performance.
+The notebook loads the cleaned CSV and includes data quality checks, KPI calculations, monthly cash flow analysis, category analysis, merchant analysis, recurring payment analysis, unusual transaction analysis, payment method analysis and budget performance analysis.
 
-## Use the SQL File
+## SQL Analysis
 
 The SQL file is:
 
@@ -231,18 +187,21 @@ The SQL file is:
 sql/transaction_analysis_queries.sql
 ```
 
-It includes:
+It includes PostgreSQL-compatible queries for:
 
-- A PostgreSQL `CREATE TABLE` statement
+- Table creation
 - Data load notes
 - Row count and date range checks
-- Income, expense and net cash flow queries
-- Monthly trend queries
-- Category and merchant spend queries
-- Recurring and unusual transaction queries
-- Budget performance queries
-- Duplicate-looking transaction checks
-- Dashboard KPI summary query
+- Total income, expenses and net cash flow
+- Monthly cash flow trends
+- Category and merchant spending
+- Recurring payment analysis
+- Unusual transaction analysis
+- Payment method breakdown
+- Budget performance
+- Duplicate-looking transactions
+- Large transactions above a threshold
+- Dashboard KPI summary
 
 Example PostgreSQL load command:
 
@@ -250,57 +209,54 @@ Example PostgreSQL load command:
 \copy transactions FROM 'data/cleaned/transactions_cleaned.csv' WITH (FORMAT csv, HEADER true);
 ```
 
-If PostgreSQL is running from another directory, use the full file path to the cleaned CSV.
+If PostgreSQL is running from another directory, use the full local path to the cleaned CSV.
 
-## Power BI Dashboard Screenshots
+## Data Dictionary
 
-After building the dashboard in Power BI, save screenshots to:
-
-```text
-dashboard/screenshots/executive_overview.png
-dashboard/screenshots/spending_analysis.png
-dashboard/screenshots/recurring_unusual_transactions.png
-dashboard/screenshots/budget_performance.png
-```
-
-Once screenshots are added, update this README with the dashboard images and one short explanation under each image.
+[View the data dictionary](docs/data_dictionary.md)
 
 ## Skills Demonstrated
 
-- Synthetic data generation
-- Data cleaning with Python and pandas
-- Feature engineering for analysis
-- Financial transaction analysis
-- SQL querying and KPI preparation
-- Exploratory data analysis
-- Dashboard planning
-- DAX measure design
+- Python data cleaning
+- Transaction data analysis
+- SQL querying
+- Financial reporting
+- Power BI dashboard planning
+- KPI reporting
+- Budget variance analysis
+- Anomaly detection
 - Business insight writing
-- GitHub project documentation
+- Clear project documentation
 
 ## CV Bullet Points
 
 - Built a financial transactions analytics dashboard using Python, SQL and Power BI to analyse 9,000 synthetic banking transactions across income, expenses, recurring payments and unusual activity.
-- Cleaned and transformed transaction data with Python and pandas, creating analysis-ready fields for monthly trends, category spend, net cash flow, budget variance and anomaly detection.
-- Developed SQL queries and dashboard-ready KPIs to support financial reporting, spending analysis, budget monitoring and business recommendations.
+- Cleaned and transformed transaction data with Python/Pandas, creating analysis-ready fields for monthly trends, category spend, net cash flow, budget variance and anomaly detection.
+- Developed SQL queries and dashboard-ready KPIs to support financial reporting, spending analysis and business recommendations.
 
-## Git Setup
+## GitHub Topics
 
-Run these commands when you are ready to create your first commit:
+Suggested repository topics:
 
-```bash
-git init
-git add .
-git commit -m "Initial financial transactions analytics project"
+```text
+data-analysis
+python
+pandas
+sql
+postgresql
+power-bi
+financial-analysis
+dashboard
+business-intelligence
+portfolio-project
 ```
 
 ## Future Improvements
 
+- Add completed Power BI dashboard screenshots to the README.
 - Add customer segmentation by spending behaviour.
 - Add rolling-average anomaly detection.
-- Add a formal data dictionary.
-- Create Power BI dashboard screenshots and add them to the README.
-- Add optional PostgreSQL setup instructions using Docker.
-- Add unit tests for the Python cleaning script.
-- Build a short project walkthrough for interview preparation.
+- Add a short project walkthrough for interview preparation.
+- Add optional PostgreSQL setup instructions for users who want to run the SQL locally.
+- Add simple tests for the Python cleaning workflow.
 

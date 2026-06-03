@@ -1,12 +1,18 @@
 # Financial Transactions Analytics Dashboard - Power BI Plan
 
-## Dashboard Goal
+## Dashboard Title
 
-Build a four-page Power BI report that helps users understand income, expenses, net cash flow, recurring payments, unusual transactions and budget performance across synthetic financial transaction data.
+Financial Transactions Analytics Dashboard
+
+## Dashboard Purpose
+
+This Power BI dashboard is designed to turn cleaned transaction data into a clear reporting experience for finance and business stakeholders. It focuses on income, expenses, net cash flow, recurring payments, unusual transactions, category spend and budget performance.
 
 Recommended data source:
 
-`data/cleaned/transactions_cleaned.csv`
+```text
+data/cleaned/transactions_cleaned.csv
+```
 
 ## Data Model Setup
 
@@ -18,8 +24,9 @@ Recommended data source:
    - `transaction_month`: Date
    - `transaction_year`: Whole number
    - `amount`, `amount_abs`, `income_amount`, `expense_amount`, `net_amount`: Decimal number
+   - `category_budget`, `category_month_expense`, `budget_variance`, `budget_variance_pct`: Decimal number
    - `is_recurring`, `is_unusual`: True/False
-5. Create a calendar table for time intelligence:
+5. Create a calendar table:
 
 ```DAX
 Calendar =
@@ -37,7 +44,20 @@ ADDCOLUMNS(
    - Relationship type: One-to-many
    - Filter direction: Single
 
-## Suggested DAX Measures
+## Suggested Slicers
+
+Use these slicers across the report pages where useful:
+
+- `Calendar[Date]`
+- `transactions[transaction_month]`
+- `transactions[category]`
+- `transactions[customer_id]`
+- `transactions[account_id]`
+- `transactions[transaction_type]`
+- `transactions[payment_method]`
+- `transactions[budget_status]`
+
+## DAX Measures
 
 ```DAX
 Total Income =
@@ -94,13 +114,39 @@ DIVIDE([Total Expenses], [Total Income])
 ```
 
 ```DAX
+Budget Amount =
+SUMX(
+    SUMMARIZE(
+        transactions,
+        transactions[transaction_month],
+        transactions[category],
+        "MonthlyBudget", MAX(transactions[category_budget])
+    ),
+    [MonthlyBudget]
+)
+```
+
+```DAX
+Actual Budgeted Category Expense =
+SUMX(
+    SUMMARIZE(
+        transactions,
+        transactions[transaction_month],
+        transactions[category],
+        "MonthlyExpense", MAX(transactions[category_month_expense])
+    ),
+    [MonthlyExpense]
+)
+```
+
+```DAX
 Budget Variance =
-SUM(transactions[budget_variance])
+[Budget Amount] - [Actual Budgeted Category Expense]
 ```
 
 ```DAX
 Budget Variance % =
-DIVIDE([Budget Variance], SUM(transactions[category_budget]))
+DIVIDE([Budget Variance], [Budget Amount])
 ```
 
 ```DAX
@@ -125,54 +171,46 @@ RETURN
     DIVIDE([Total Expenses] - PreviousMonthExpenses, PreviousMonthExpenses)
 ```
 
-## Suggested Colour Scheme
+## Recommended Design Style
 
 Use a clean finance/reporting palette:
 
 - Deep navy: `#18324A`
 - Teal: `#1F8A8A`
-- Green for income/positive cash flow: `#2E7D32`
-- Red for expenses/negative variance: `#C62828`
-- Amber for warnings: `#F9A825`
+- Green for income and positive cash flow: `#2E7D32`
+- Red for expenses and negative variance: `#C62828`
+- Amber for warning or unusual transaction indicators: `#F9A825`
 - Light grey background: `#F5F7FA`
 - Dark text: `#1F2933`
 
-Keep backgrounds light, use navy for headings, green for income, red for expenses, and amber for warning or unusual transaction indicators.
+Keep the report light, readable and business-focused. Use consistent KPI formatting and avoid unnecessary decoration.
 
 ## Page 1: Executive Overview
 
-Purpose: Give a fast executive summary of overall financial performance.
+Purpose: Provide a fast summary of financial performance.
 
 Recommended visuals:
 
-- KPI card: Total Income
-  - Field: `[Total Income]`
-  - Format: Currency
-- KPI card: Total Expenses
-  - Field: `[Total Expenses]`
-  - Format: Currency
-- KPI card: Net Cash Flow
-  - Field: `[Net Cash Flow]`
-  - Format: Currency
-- KPI card: Number of Transactions
-  - Field: `[Transaction Count]`
-- Line and clustered column chart: Monthly income vs expenses
+- KPI card: `[Total Income]`
+- KPI card: `[Total Expenses]`
+- KPI card: `[Net Cash Flow]`
+- KPI card: `[Transaction Count]`
+- Line and clustered column chart: monthly income vs expenses
   - X-axis: `Calendar[Month Year]`
   - Column values: `[Total Expenses]`
   - Line values: `[Total Income]`
-  - Sort by: `Calendar[Month Number]`
-- Donut chart: Category spending breakdown
+- Donut chart: category spending breakdown
   - Legend: `transactions[category]`
   - Values: `[Total Expenses]`
-- Bar chart: Payment method breakdown
+- Bar chart: payment method breakdown
   - Axis: `transactions[payment_method]`
   - Values: `[Transaction Count]`
 
 Layout guidance:
 
 - Place KPI cards across the top row.
-- Use the monthly trend chart as the largest visual in the centre.
-- Place category and payment method charts below or to the right depending on screen width.
+- Use the monthly trend chart as the main visual.
+- Place category and payment method visuals below the main trend chart.
 
 ## Page 2: Spending Analysis
 
@@ -180,114 +218,141 @@ Purpose: Explain where money is going and which categories or merchants drive th
 
 Recommended visuals:
 
-- Bar chart: Spending by category
+- Bar chart: spending by category
   - Axis: `transactions[category]`
   - Values: `[Total Expenses]`
   - Sort descending by `[Total Expenses]`
-- Bar chart: Top merchants
+- Bar chart: top merchants
   - Axis: `transactions[merchant]`
   - Values: `[Total Expenses]`
   - Visual filter: Top 10 by `[Total Expenses]`
-- Line chart: Monthly spending trend
+- Line chart: monthly spending trend
   - X-axis: `Calendar[Month Year]`
   - Values: `[Total Expenses]`
-- Matrix: High-spend categories
+- Matrix: high-spend categories
   - Rows: `transactions[category]`
   - Values: `[Total Expenses]`, `[Average Transaction Amount]`, `[Transaction Count]`
 
-Recommended slicers:
+Suggested slicers:
 
-- `Calendar[Date]`
-- `transactions[category]`
-- `transactions[customer_id]`
-- `transactions[transaction_type]`
-- `transactions[payment_method]`
+- Date
+- Category
+- Customer ID
+- Transaction type
+- Payment method
 
 Layout guidance:
 
-- Put slicers in a slim panel on the left.
-- Use category and merchant bar charts as the main comparison visuals.
-- Keep table/matrix visuals below charts for detailed review.
+- Put slicers in a left-side panel or top filter row.
+- Make the category and merchant charts the main comparison visuals.
+- Use the matrix for detail rather than as the main visual.
 
 ## Page 3: Recurring and Unusual Transactions
 
-Purpose: Highlight fixed costs, unusual activity and possible investigation areas.
+Purpose: Highlight regular payments, possible anomalies and transactions worth review.
 
 Recommended visuals:
 
-- KPI card: Unusual Transaction Count
-  - Field: `[Unusual Transaction Count]`
-- KPI card: Unusual Transaction Value
-  - Field: `[Unusual Transaction Value]`
-- Table: Recurring payments
+- KPI card: `[Recurring Payment Total]`
+- KPI card: `[Unusual Transaction Count]`
+- KPI card: `[Unusual Transaction Value]`
+- Table: recurring payments
   - Fields: `merchant`, `category`, `payment_method`, `amount_abs`, `transaction_date`
-  - Visual filter: `is_recurring = True`
-- Table: Unusual transactions
-  - Fields: `transaction_id`, `transaction_date`, `customer_id`, `category`, `merchant`, `amount`, `payment_method`
-  - Visual filter: `is_unusual = True`
-- Heatmap-style matrix: Spend spikes by month/category
+  - Filter: `is_recurring = True`
+- Table: unusual transactions
+  - Fields: `transaction_id`, `transaction_date`, `customer_id`, `account_id`, `category`, `merchant`, `amount`, `payment_method`
+  - Filter: `is_unusual = True`
+- Matrix with conditional formatting: spend spikes by month and category
   - Rows: `transactions[category]`
   - Columns: `Calendar[Month Year]`
   - Values: `[Total Expenses]`
-  - Conditional formatting: background colour by value
-- Bar chart: Large transactions
+- Bar chart: large transactions
   - Axis: `transactions[merchant]`
   - Values: `transactions[amount_abs]`
-  - Visual filter: amount_abs greater than or equal to 1000
+  - Filter: `amount_abs >= 1000`
+
+Suggested slicers:
+
+- Date
+- Category
+- Merchant
+- Payment method
+- Customer ID
 
 Layout guidance:
 
-- Put unusual KPI cards at the top.
-- Use the recurring and unusual tables side by side.
-- Use conditional formatting to make spikes easy to see.
+- Put unusual transaction KPIs at the top.
+- Use tables for investigation detail.
+- Use conditional formatting to make spikes easy to identify.
 
 ## Page 4: Budget Performance
 
-Purpose: Compare actual monthly spend with budget and identify categories needing action.
+Purpose: Compare actual spending with benchmark budgets and identify categories needing action.
 
 Recommended visuals:
 
-- Clustered bar chart: Budget vs actual by category
+- Clustered bar chart: budget vs actual by category
   - Axis: `transactions[category]`
-  - Values: `transactions[category_budget]`, `transactions[category_month_expense]`
+  - Values: `[Budget Amount]`, `[Actual Budgeted Category Expense]`
   - Filter: `category_budget > 0`
-- Table: Over-budget categories
+- Table: over-budget categories
   - Fields: `transaction_month`, `category`, `category_budget`, `category_month_expense`, `budget_variance`, `budget_status`
-  - Visual filter: `budget_status = Over Budget`
-- Donut chart or stacked bar: Budget status
+  - Filter: `budget_status = Over Budget`
+- Donut or stacked bar chart: budget status
   - Legend: `transactions[budget_status]`
   - Values: `[Transaction Count]`
-- Text box: Recommendations
+- Text box: recommendations
   - Review recurring costs in high-spend categories.
   - Set alerts for unusual high-value transactions.
   - Investigate repeated over-budget categories.
   - Separate essential and discretionary spend.
 
+Suggested slicers:
+
+- Date
+- Category
+- Budget status
+- Transaction type
+
 Layout guidance:
 
-- Put the budget vs actual visual at the top.
-- Place over-budget details below.
-- Keep recommendations short and business-focused.
+- Place budget vs actual at the top.
+- Put over-budget details below the main visual.
+- Keep recommendations short and action-focused.
 
-## Screenshots to Save
+## Screenshot Checklist
 
-After building the Power BI report, export or screenshot each page and save them here:
+After building the Power BI report, export or screenshot each page and save it in `dashboard/screenshots/`.
 
-- `dashboard/screenshots/executive_overview.png`
-- `dashboard/screenshots/spending_analysis.png`
-- `dashboard/screenshots/recurring_unusual_transactions.png`
-- `dashboard/screenshots/budget_performance.png`
+Expected files:
 
-## What to Add to GitHub After Screenshots
-
-Once screenshots are saved:
-
-1. Add the four images to the README dashboard section.
-2. Include one sentence under each screenshot explaining what the page shows.
-3. Commit the screenshots:
-
-```bash
-git add dashboard/screenshots README.md
-git commit -m "Add Power BI dashboard screenshots"
+```text
+dashboard/screenshots/executive_overview.png
+dashboard/screenshots/spending_analysis.png
+dashboard/screenshots/recurring_unusual_transactions.png
+dashboard/screenshots/budget_performance.png
 ```
 
+## Final Screenshot Checklist
+
+After building the Power BI dashboard, save these screenshots:
+
+* dashboard/screenshots/executive_overview.png
+* dashboard/screenshots/spending_analysis.png
+* dashboard/screenshots/recurring_unusual_transactions.png
+* dashboard/screenshots/budget_performance.png
+
+## Final GitHub Update Checklist
+
+After screenshots are added:
+
+1. Add the four screenshot files to `dashboard/screenshots/`.
+2. Update the README dashboard screenshots section with image links and a short explanation for each page.
+3. Check that the screenshots display correctly on GitHub.
+4. Commit and push the dashboard updates:
+
+```bash
+git add README.md dashboard/screenshots
+git commit -m "Add Power BI dashboard screenshots"
+git push
+```
