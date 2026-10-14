@@ -1,10 +1,22 @@
 .venv/
+venv/
 __pycache__/
 **/__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+build/
+dist/
 .DS_Store
 .env
+.env.*
+!.env.example
 .ipynb_checkpoints/
 *.tmp
 *.temp
 *.log
+
+# Unrelated local report retained outside this project's release
+dashboard/Retail Sales Dashboard.pbix
 

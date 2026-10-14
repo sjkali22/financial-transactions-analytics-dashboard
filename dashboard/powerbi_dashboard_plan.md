@@ -1,63 +1,53 @@
-# Financial Transactions Analytics Dashboard - Power BI Plan
+# Power BI Dashboard — v1.0 Validation Guide
 
-## Dashboard Title
+## Scope and Verification Status
 
-Financial Transactions Analytics Dashboard
+The v1.0 report scope is exactly two pages:
 
-## Dashboard Purpose
+1. **Executive Overview**
+2. **Spending Analysis**
 
-This Power BI dashboard is designed to turn cleaned transaction data into a clear reporting experience for finance and business stakeholders. It focuses on income, expenses, net cash flow, recurring payments, unusual transactions, category spend and budget performance.
+`financial_transactions_dashboard.pbix` has been preserved unchanged. Archive integrity passed, and read-only layout inspection confirmed exactly two pages: **Executive Overview** (12 visual containers) and **Spending Analysis** (13 visual containers). The package also contains a data model, metadata, settings, and theme resources.
 
-Recommended data source:
+The layout queries reference transaction fields and the measures `Total Income`, `Total Expenses`, `Net Cash Flow`, `Transaction Count`, `Average Transaction Amount`, and `Recurring Payment Total`. They contain no references to retail or sales fields. This confirms the report belongs to the financial-transactions project, but it also identifies one required correction: replace the ambiguous `Recurring Payment Total` visual measure with `Recurring Expenses` below. Add `Operating Surplus` so the report distinguishes income less expenses from total signed cash movement.
 
-```text
-data/cleaned/transactions_cleaned.csv
-```
+Power BI Desktop and `pbi-tools` were not available during automated verification. Consequently, the rendered visuals, DAX definitions, relationships, formatting, data freshness, and interactions are **not verified**. Use this guide to complete the required desktop check; do not interpret package-level layout inspection as visual validation.
 
-## Data Model Setup
+The unrelated local file `Retail Sales Dashboard.pbix` is explicitly excluded by `.gitignore` and is not part of this project.
 
-1. Open Power BI Desktop.
-2. Select **Get Data > Text/CSV**.
-3. Load `data/cleaned/transactions_cleaned.csv`.
-4. Confirm these data types:
-   - `transaction_date`: Date
-   - `transaction_month`: Date
-   - `transaction_year`: Whole number
-   - `amount`, `amount_abs`, `income_amount`, `expense_amount`, `net_amount`: Decimal number
-   - `category_budget`, `category_month_expense`, `budget_variance`, `budget_variance_pct`: Decimal number
-   - `is_recurring`, `is_unusual`: True/False
-5. Create a calendar table:
+## Data Source and Model
+
+Use `data/cleaned/transactions_cleaned.csv` as the source table named `transactions`. After refreshing, confirm:
+
+- 9,000 rows and 26 columns;
+- `transaction_date` and `transaction_month` are Date fields;
+- monetary and ratio fields are Decimal Number;
+- `transaction_year` is Whole Number;
+- `is_recurring` and `is_unusual` are True/False; and
+- transaction IDs contain 9,000 distinct values.
+
+Create a calendar table:
 
 ```DAX
 Calendar =
 ADDCOLUMNS(
-    CALENDAR(MIN(transactions[transaction_date]), MAX(transactions[transaction_date])),
+    CALENDAR(
+        MIN(transactions[transaction_date]),
+        MAX(transactions[transaction_date])
+    ),
     "Year", YEAR([Date]),
     "Month Number", MONTH([Date]),
     "Month Name", FORMAT([Date], "MMM"),
-    "Month Year", FORMAT([Date], "MMM YYYY")
+    "Month Year", FORMAT([Date], "MMM YYYY"),
+    "Month Sort", YEAR([Date]) * 100 + MONTH([Date])
 )
 ```
 
-6. Create a relationship:
-   - `Calendar[Date]` to `transactions[transaction_date]`
-   - Relationship type: One-to-many
-   - Filter direction: Single
+Sort `Calendar[Month Year]` by `Calendar[Month Sort]`. Create one active, single-direction, one-to-many relationship from `Calendar[Date]` to `transactions[transaction_date]`, and mark `Calendar` as the date table.
 
-## Suggested Slicers
+## Reconciled DAX Measures
 
-Use these slicers across the report pages where useful:
-
-- `Calendar[Date]`
-- `transactions[transaction_month]`
-- `transactions[category]`
-- `transactions[customer_id]`
-- `transactions[account_id]`
-- `transactions[transaction_type]`
-- `transactions[payment_method]`
-- `transactions[budget_status]`
-
-## DAX Measures
+Replace ambiguous or conflicting measures with these definitions.
 
 ```DAX
 Total Income =
@@ -67,6 +57,27 @@ SUM(transactions[income_amount])
 ```DAX
 Total Expenses =
 SUM(transactions[expense_amount])
+```
+
+```DAX
+Operating Surplus =
+[Total Income] - [Total Expenses]
+```
+
+```DAX
+Refund Inflows =
+CALCULATE(
+    SUM(transactions[net_amount]),
+    transactions[transaction_type] = "Refund"
+)
+```
+
+```DAX
+Net Transfers =
+CALCULATE(
+    SUM(transactions[net_amount]),
+    transactions[transaction_type] = "Transfer"
+)
 ```
 
 ```DAX
@@ -80,279 +91,159 @@ COUNTROWS(transactions)
 ```
 
 ```DAX
-Average Transaction Amount =
+Average Transaction Value =
 AVERAGE(transactions[amount_abs])
 ```
 
 ```DAX
-Recurring Payment Total =
+Recurring Expenses =
 CALCULATE(
-    SUM(transactions[amount_abs]),
-    transactions[is_recurring] = TRUE()
+    SUM(transactions[expense_amount]),
+    transactions[is_recurring] = TRUE(),
+    transactions[transaction_type] = "Expense"
 )
 ```
 
-```DAX
-Unusual Transaction Count =
-CALCULATE(
-    COUNTROWS(transactions),
-    transactions[is_unusual] = TRUE()
-)
-```
-
-```DAX
-Unusual Transaction Value =
-CALCULATE(
-    SUM(transactions[amount_abs]),
-    transactions[is_unusual] = TRUE()
-)
-```
-
-```DAX
-Expense Ratio =
-DIVIDE([Total Expenses], [Total Income])
-```
+The budget fields repeat on transaction rows. These measures aggregate once per visible month/category and must replace direct sums:
 
 ```DAX
 Budget Amount =
 SUMX(
     SUMMARIZE(
-        transactions,
+        FILTER(transactions, transactions[category_budget] > 0),
         transactions[transaction_month],
         transactions[category],
-        "MonthlyBudget", MAX(transactions[category_budget])
+        "Monthly Budget", MAX(transactions[category_budget])
     ),
-    [MonthlyBudget]
+    [Monthly Budget]
 )
 ```
 
 ```DAX
-Actual Budgeted Category Expense =
+Actual Budgeted Expense =
 SUMX(
     SUMMARIZE(
-        transactions,
+        FILTER(transactions, transactions[category_budget] > 0),
         transactions[transaction_month],
         transactions[category],
-        "MonthlyExpense", MAX(transactions[category_month_expense])
+        "Monthly Actual", MAX(transactions[category_month_expense])
     ),
-    [MonthlyExpense]
+    [Monthly Actual]
 )
 ```
 
 ```DAX
 Budget Variance =
-[Budget Amount] - [Actual Budgeted Category Expense]
+[Budget Amount] - [Actual Budgeted Expense]
 ```
 
 ```DAX
-Budget Variance % =
-DIVIDE([Budget Variance], [Budget Amount])
+Budget Utilisation % =
+DIVIDE([Actual Budgeted Expense], [Budget Amount])
 ```
 
 ```DAX
-Month-over-Month Expense Change =
-VAR PreviousMonthExpenses =
-    CALCULATE(
-        [Total Expenses],
-        DATEADD('Calendar'[Date], -1, MONTH)
+Exceeded Budget Periods =
+COUNTROWS(
+    FILTER(
+        SUMMARIZE(
+            FILTER(transactions, transactions[category_budget] > 0),
+            transactions[transaction_month],
+            transactions[category],
+            "Status", MAX(transactions[budget_status])
+        ),
+        [Status] = "Exceeded Budget"
     )
-RETURN
-    [Total Expenses] - PreviousMonthExpenses
+)
 ```
 
-```DAX
-Month-over-Month Expense Change % =
-VAR PreviousMonthExpenses =
-    CALCULATE(
-        [Total Expenses],
-        DATEADD('Calendar'[Date], -1, MONTH)
-    )
-RETURN
-    DIVIDE([Total Expenses] - PreviousMonthExpenses, PreviousMonthExpenses)
+## Expected Unfiltered Results
+
+Use these values after refresh to verify the model and measures:
+
+| Measure | Expected value |
+| --- | ---: |
+| Transaction Count | 9,000 |
+| Total Income | £4,710,640.23 |
+| Total Expenses | £1,995,612.11 |
+| Operating Surplus | £2,715,028.12 |
+| Refund Inflows | £4,517.54 |
+| Net Transfers | −£479,014.83 |
+| Net Cash Flow | £2,240,530.83 |
+| Average Transaction Value | £800.74 |
+| Recurring Expenses | £1,704,954.66 |
+| Budget Amount | £1,981,200.00 |
+| Actual Budgeted Expense | £1,995,612.11 |
+| Budget Variance | −£14,412.11 |
+| Budget Utilisation | 100.73% |
+| Exceeded Budget Periods | 66 |
+
+The reconciliation must hold:
+
+```text
+Operating Surplus + Refund Inflows + Net Transfers = Net Cash Flow
 ```
 
-## Recommended Design Style
+## Page 1 — Executive Overview
 
-Use a clean finance/reporting palette:
+Purpose: explain overall financial position and cash movement quickly.
 
-- Deep navy: `#18324A`
-- Teal: `#1F8A8A`
-- Green for income and positive cash flow: `#2E7D32`
-- Red for expenses and negative variance: `#C62828`
-- Amber for warning or unusual transaction indicators: `#F9A825`
-- Light grey background: `#F5F7FA`
-- Dark text: `#1F2933`
+Required content:
 
-Keep the report light, readable and business-focused. Use consistent KPI formatting and avoid unnecessary decoration.
+- KPI cards: Total Income, Total Expenses, Operating Surplus, Net Cash Flow, Transaction Count.
+- Monthly comparison: Total Income and Total Expenses by `Calendar[Month Year]`.
+- Cash-flow bridge or supporting cards: Refund Inflows and Net Transfers.
+- Expense category bar chart using `Total Expenses`, filtered to Expense transactions.
+- Slicers: date, category, and transaction type.
 
-## Page 1: Executive Overview
+Use consistent currency units on every card. Do not label Operating Surplus as Net Cash Flow.
 
-Purpose: Provide a fast summary of financial performance.
+## Page 2 — Spending Analysis
 
-Recommended visuals:
+Purpose: explain expense drivers, recurring commitments, and budget performance.
 
-- KPI card: `[Total Income]`
-- KPI card: `[Total Expenses]`
-- KPI card: `[Net Cash Flow]`
-- KPI card: `[Transaction Count]`
-- Line and clustered column chart: monthly income vs expenses
-  - X-axis: `Calendar[Month Year]`
-  - Column values: `[Total Expenses]`
-  - Line values: `[Total Income]`
-- Donut chart: category spending breakdown
-  - Legend: `transactions[category]`
-  - Values: `[Total Expenses]`
-- Bar chart: payment method breakdown
-  - Axis: `transactions[payment_method]`
-  - Values: `[Transaction Count]`
+Required content:
 
-Layout guidance:
+- KPI cards: Total Expenses, Recurring Expenses, Average Transaction Value, Budget Utilisation %.
+- Spending by category, sorted descending.
+- Monthly expense trend.
+- Budget vs actual by category using the deduplicated measures.
+- Merchant or transaction detail table for investigation.
+- Slicers: date, category, merchant, payment method, recurring flag, and budget status as space allows.
 
-- Place KPI cards across the top row.
-- Use the monthly trend chart as the main visual.
-- Place category and payment method visuals below the main trend chart.
+Do not use `COUNTROWS(transactions)` to chart budget-status periods; that counts transactions rather than month/category outcomes.
 
-## Page 2: Spending Analysis
+## Visual Standards
 
-Purpose: Explain where money is going and which categories or merchants drive the most spend.
+- Use a light background, dark text, and one restrained accent colour.
+- Reserve green/red for meaningful positive/negative states; ensure accessibility does not rely on colour alone.
+- Format currency consistently as GBP with two decimals on validation cards; display units may be used on charts.
+- Format ratios as percentages and keep date labels chronologically sorted.
+- Align cards and visuals to a consistent grid with readable titles.
+- Remove decorative visuals that do not answer an analytical question.
 
-Recommended visuals:
+## Desktop Validation Checklist
 
-- Bar chart: spending by category
-  - Axis: `transactions[category]`
-  - Values: `[Total Expenses]`
-  - Sort descending by `[Total Expenses]`
-- Bar chart: top merchants
-  - Axis: `transactions[merchant]`
-  - Values: `[Total Expenses]`
-  - Visual filter: Top 10 by `[Total Expenses]`
-- Line chart: monthly spending trend
-  - X-axis: `Calendar[Month Year]`
-  - Values: `[Total Expenses]`
-- Matrix: high-spend categories
-  - Rows: `transactions[category]`
-  - Values: `[Total Expenses]`, `[Average Transaction Amount]`, `[Transaction Count]`
+- [ ] Refresh succeeds from the repository-relative CSV after reconnecting the source.
+- [ ] Row count, column count, data types, and distinct transaction IDs are correct.
+- [ ] Only the two release pages are visible.
+- [ ] All expected unfiltered KPI values match the table above.
+- [ ] Operating Surplus and Net Cash Flow are separately named and reconciled.
+- [ ] Recurring Expenses excludes salary and transfers.
+- [ ] Budget visuals use month/category-grain measures and show 66 exceeded periods.
+- [ ] Month labels sort chronologically.
+- [ ] Slicers cross-filter all intended visuals and reset cleanly.
+- [ ] Cards and charts use consistent GBP/percentage formats and accessible colours.
+- [ ] No absolute local path, unrelated retail dataset, or sensitive data appears.
+- [ ] Save the validated report back to `dashboard/financial_transactions_dashboard.pbix`.
 
-Suggested slicers:
+## Genuine Screenshots Required
 
-- Date
-- Category
-- Customer ID
-- Transaction type
-- Payment method
-
-Layout guidance:
-
-- Put slicers in a left-side panel or top filter row.
-- Make the category and merchant charts the main comparison visuals.
-- Use the matrix for detail rather than as the main visual.
-
-## Page 3: Recurring and Unusual Transactions
-
-Purpose: Highlight regular payments, possible anomalies and transactions worth review.
-
-Recommended visuals:
-
-- KPI card: `[Recurring Payment Total]`
-- KPI card: `[Unusual Transaction Count]`
-- KPI card: `[Unusual Transaction Value]`
-- Table: recurring payments
-  - Fields: `merchant`, `category`, `payment_method`, `amount_abs`, `transaction_date`
-  - Filter: `is_recurring = True`
-- Table: unusual transactions
-  - Fields: `transaction_id`, `transaction_date`, `customer_id`, `account_id`, `category`, `merchant`, `amount`, `payment_method`
-  - Filter: `is_unusual = True`
-- Matrix with conditional formatting: spend spikes by month and category
-  - Rows: `transactions[category]`
-  - Columns: `Calendar[Month Year]`
-  - Values: `[Total Expenses]`
-- Bar chart: large transactions
-  - Axis: `transactions[merchant]`
-  - Values: `transactions[amount_abs]`
-  - Filter: `amount_abs >= 1000`
-
-Suggested slicers:
-
-- Date
-- Category
-- Merchant
-- Payment method
-- Customer ID
-
-Layout guidance:
-
-- Put unusual transaction KPIs at the top.
-- Use tables for investigation detail.
-- Use conditional formatting to make spikes easy to identify.
-
-## Page 4: Budget Performance
-
-Purpose: Compare actual spending with benchmark budgets and identify categories needing action.
-
-Recommended visuals:
-
-- Clustered bar chart: budget vs actual by category
-  - Axis: `transactions[category]`
-  - Values: `[Budget Amount]`, `[Actual Budgeted Category Expense]`
-  - Filter: `category_budget > 0`
-- Table: over-budget categories
-  - Fields: `transaction_month`, `category`, `category_budget`, `category_month_expense`, `budget_variance`, `budget_status`
-  - Filter: `budget_status = Over Budget`
-- Donut or stacked bar chart: budget status
-  - Legend: `transactions[budget_status]`
-  - Values: `[Transaction Count]`
-- Text box: recommendations
-  - Review recurring costs in high-spend categories.
-  - Set alerts for unusual high-value transactions.
-  - Investigate repeated over-budget categories.
-  - Separate essential and discretionary spend.
-
-Suggested slicers:
-
-- Date
-- Category
-- Budget status
-- Transaction type
-
-Layout guidance:
-
-- Place budget vs actual at the top.
-- Put over-budget details below the main visual.
-- Keep recommendations short and action-focused.
-
-## Screenshot Checklist
-
-After building the Power BI report, export or screenshot each page and save it in `dashboard/screenshots/`.
-
-Expected files:
+After validation, export or capture the two report pages at a readable resolution:
 
 ```text
 dashboard/screenshots/executive_overview.png
 dashboard/screenshots/spending_analysis.png
-dashboard/screenshots/recurring_unusual_transactions.png
-dashboard/screenshots/budget_performance.png
 ```
 
-## Final Screenshot Checklist
-
-After building the Power BI dashboard, save these screenshots:
-
-* dashboard/screenshots/executive_overview.png
-* dashboard/screenshots/spending_analysis.png
-* dashboard/screenshots/recurring_unusual_transactions.png
-* dashboard/screenshots/budget_performance.png
-
-## Final GitHub Update Checklist
-
-After screenshots are added:
-
-1. Add the four screenshot files to `dashboard/screenshots/`.
-2. Update the README dashboard screenshots section with image links and a short explanation for each page.
-3. Check that the screenshots display correctly on GitHub.
-4. Commit and push the dashboard updates:
-
-```bash
-git add README.md dashboard/screenshots
-git commit -m "Add Power BI dashboard screenshots"
-git push
-```
+Add those real images to the README only after their numbers match the expected values. Do not create mockups and label them as Power BI output.

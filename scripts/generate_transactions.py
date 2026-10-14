@@ -128,7 +128,10 @@ def payment_method_for(category: str, transaction_type: str) -> str:
     if transaction_type == "Income":
         return "Bank Transfer"
     if category in {"Rent", "Utilities", "Subscriptions", "Insurance"}:
-        return weighted_choice(["Direct Debit", "Bank Transfer", "Standing Order"], [0.7, 0.2, 0.1])
+        return weighted_choice(
+            ["Direct Debit", "Bank Transfer", "Standing Order"],
+            [0.7, 0.2, 0.1],
+        )
     if category in {"Savings", "Transfers"}:
         return weighted_choice(["Bank Transfer", "Standing Order"], [0.75, 0.25])
     if category == "Transport" and rng.random() < 0.15:
@@ -167,7 +170,10 @@ def add_transaction(
     )
 
 
-def add_recurring_transactions(rows: list[dict[str, object]], accounts: list[dict[str, object]]) -> None:
+def add_recurring_transactions(
+    rows: list[dict[str, object]],
+    accounts: list[dict[str, object]],
+) -> None:
     for account in accounts:
         has_salary = rng.random() < 0.78
         has_rent = rng.random() < 0.48
@@ -183,7 +189,10 @@ def add_recurring_transactions(rows: list[dict[str, object]], accounts: list[dic
         insurance_amount = rng.uniform(45, 190)
         gym_amount = rng.uniform(25, 75)
         savings_amount = rng.uniform(150, 900)
-        subscription_merchants = random.sample(CATEGORY_MERCHANTS["Subscriptions"], k=subscription_count)
+        subscription_merchants = random.sample(
+            CATEGORY_MERCHANTS["Subscriptions"],
+            k=subscription_count,
+        )
 
         for month_start in MONTHS:
             if has_salary:
@@ -281,7 +290,11 @@ def add_recurring_transactions(rows: list[dict[str, object]], accounts: list[dic
                 )
 
 
-def add_random_transaction(rows: list[dict[str, object]], accounts: list[dict[str, object]]) -> None:
+def add_random_transaction(
+    rows: list[dict[str, object]],
+    accounts: list[dict[str, object]],
+    target_row_count: int = TARGET_ROW_COUNT,
+) -> None:
     account = accounts[int(rng.integers(0, len(accounts)))]
     transaction_date = random_date()
 
@@ -302,7 +315,7 @@ def add_random_transaction(rows: list[dict[str, object]], accounts: list[dict[st
         )
         return
 
-    if roll < 0.035 and len(rows) + 2 <= TARGET_ROW_COUNT:
+    if roll < 0.035 and len(rows) + 2 <= target_row_count:
         category = str(rng.choice(["Dining", "Shopping", "Transport", "Groceries"]))
         merchant = str(rng.choice(CATEGORY_MERCHANTS[category]))
         amount = expense_amount(category)
@@ -345,7 +358,11 @@ def add_random_transaction(rows: list[dict[str, object]], accounts: list[dict[st
     elif category == "Transfers":
         transaction_type = "Transfer"
         merchant = str(rng.choice(CATEGORY_MERCHANTS["Transfers"]))
-        amount = money(rng.uniform(50, 650)) if rng.random() < 0.2 else -money(rng.uniform(50, 900))
+        amount = (
+            money(rng.uniform(50, 650))
+            if rng.random() < 0.2
+            else -money(rng.uniform(50, 900))
+        )
     else:
         transaction_type = "Expense"
         merchant = str(rng.choice(CATEGORY_MERCHANTS[category]))
@@ -371,8 +388,14 @@ def add_random_transaction(rows: list[dict[str, object]], accounts: list[dict[st
     )
 
 
-def add_running_balances(rows: list[dict[str, object]], accounts: list[dict[str, object]]) -> pd.DataFrame:
-    opening_balances = {str(account["account_id"]): float(account["opening_balance"]) for account in accounts}
+def add_running_balances(
+    rows: list[dict[str, object]],
+    accounts: list[dict[str, object]],
+) -> pd.DataFrame:
+    opening_balances = {
+        str(account["account_id"]): float(account["opening_balance"])
+        for account in accounts
+    }
     df = pd.DataFrame(rows)
 
     df["transaction_date"] = pd.to_datetime(df["transaction_date"])
@@ -403,15 +426,34 @@ def add_running_balances(rows: list[dict[str, object]], accounts: list[dict[str,
     return df[columns]
 
 
-def main() -> None:
+def generate_dataset(seed: int = SEED, target_row_count: int = TARGET_ROW_COUNT) -> pd.DataFrame:
+    """Return a deterministic synthetic transaction dataset.
+
+    The random generators are reset on every call so repeated calls in the same
+    Python process produce identical output for the same seed.
+    """
+    if target_row_count <= 0:
+        raise ValueError("target_row_count must be greater than zero")
+
+    global rng
+    rng = np.random.default_rng(seed)
+    random.seed(seed)
+
     accounts = build_accounts()
     rows: list[dict[str, object]] = []
 
     add_recurring_transactions(rows, accounts)
-    while len(rows) < TARGET_ROW_COUNT:
-        add_random_transaction(rows, accounts)
+    if len(rows) > target_row_count:
+        rows = rows[:target_row_count]
+    while len(rows) < target_row_count:
+        add_random_transaction(rows, accounts, target_row_count)
 
-    df = add_running_balances(rows, accounts)
+    return add_running_balances(rows, accounts)
+
+
+def main() -> None:
+    df = generate_dataset()
+
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(OUTPUT_PATH, index=False)
 
